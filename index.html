@@ -1,66 +1,217 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Chord Fretboard</title>
+<meta charset="UTF-8">
+<title>Guitar Chord Detector</title>
 
-    <style>
-        body {
-            font-family: Arial;
-            text-align: center;
-            margin-top: 30px;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 20px;
+    }
 
-        .row {
-            display: flex;
-            align-items: center;
-        }
+    h2 {
+        margin-bottom: 10px;
+    }
 
-        .label {
-            width: 40px;
-            font-weight: bold;
-            text-align: right;
-            margin-right: 10px;
-        }
+    #board {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 20px;
+    }
 
-        .string {
-            display: grid;
-            grid-template-columns: repeat(13, 50px);
-        }
+    .row {
+        display: flex;
+        align-items: center;
+    }
 
-        .fret {
-            border: 1px solid #333;
-            padding: 5px;
-            cursor: pointer;
-            user-select: none;
-        }
+    .label {
+        width: 40px;
+        font-weight: bold;
+    }
 
-        .open {
-            background: #ddd;
-        }
+    .string {
+        display: grid;
+        grid-template-columns: repeat(13, 50px);
+        gap: 2px;
+    }
 
-        .mark {
-            background: black;
-            color: white;
-        }
+    .fret {
+        border: 1px solid #333;
+        padding: 6px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+    }
 
-        #output {
-            margin-top: 20px;
-            font-family: monospace;
-            white-space: pre-line;
-        }
-    </style>
+    .open {
+        background: #ddd;
+    }
+
+    .mark {
+        background: black;
+        color: white;
+    }
+
+    #output {
+        margin-top: 20px;
+        white-space: pre-line;
+        font-family: monospace;
+    }
+
+    input {
+        padding: 8px;
+        width: 250px;
+    }
+
+    button {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+</style>
 </head>
 
 <body>
 
 <h2>Interactive Guitar Chord Builder</h2>
 
+<input id="tabInput" placeholder="e.g. x02220">
+<button onclick="drawFromInput()">Analyze</button>
+
 <div id="board"></div>
 
 <div id="output">Select at least 3 notes...</div>
 
-<script src="chordsDetector.js"></script>
+<script src="./chordsDetector.js"></script>
+
+<script>
+const tuning = ["E","A","D","G","B","E"];
+
+// ---------------- STATE ----------------
+let selected = ["x","x","x","x","x","x"];
+
+// ---------------- BUILD FRETBOARD ----------------
+function buildFretboard() {
+
+    const board = document.getElementById("board");
+
+    tuning.forEach((openNote, stringIndex) => {
+
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.innerText = openNote;
+        row.appendChild(label);
+
+        const string = document.createElement("div");
+        string.className = "string";
+
+        for (let fret = 0; fret <= 12; fret++) {
+
+            const div = document.createElement("div");
+            div.className = "fret";
+
+            if (fret === 0) div.classList.add("open");
+
+            div.innerText = window.getNote(openNote, fret);
+
+            div.addEventListener("click", () => {
+
+                // clear previous selection on this string
+                Array.from(string.children).forEach(f => f.classList.remove("mark"));
+
+                // toggle off if same fret clicked
+                if (selected[stringIndex] == fret.toString()) {
+                    selected[stringIndex] = "x";
+                    updateOutput();
+                    return;
+                }
+
+                selected[stringIndex] = String(fret);
+                div.classList.add("mark");
+
+                updateOutput();
+            });
+
+            string.appendChild(div);
+        }
+
+        row.appendChild(string);
+        board.appendChild(row);
+    });
+}
+
+// ---------------- GET TAB STRING ----------------
+function getTabString() {
+    return selected.join("");
+}
+
+// ---------------- UPDATE OUTPUT ----------------
+function updateOutput() {
+
+    const output = document.getElementById("output");
+
+    const tab = getTabString();
+
+    const notes = window.tabToOrderedNotes(tab, tuning);
+
+    if (notes.length < 3) {
+        output.innerText = "Select at least 3 notes...";
+        return;
+    }
+
+    const chords = window.detectChord(tab, tuning);
+
+    let text =
+        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
+        "Chords:\n";
+
+    chords.slice(0, 5).forEach(c => {
+        text += `${c.name} (${c.score.toFixed(2)})\n`;
+    });
+
+    output.innerText = text;
+}
+
+// ---------------- MANUAL INPUT SUPPORT ----------------
+function drawFromInput() {
+
+    const input = document.getElementById("tabInput").value;
+
+    try {
+        const parsed = window.parseTab(input);
+
+        // reset state
+        selected = parsed;
+
+        // clear UI marks
+        document.querySelectorAll(".fret").forEach(f => f.classList.remove("mark"));
+
+        // re-mark UI
+        const strings = document.querySelectorAll(".string");
+
+        for (let i = 0; i < 6; i++) {
+            if (parsed[i] === "x") continue;
+
+            const fret = parseInt(parsed[i]);
+            const cell = strings[i].children[fret];
+            if (cell) cell.classList.add("mark");
+        }
+
+        updateOutput();
+
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+// ---------------- INIT ----------------
+buildFretboard();
+</script>
 
 </body>
 </html>
