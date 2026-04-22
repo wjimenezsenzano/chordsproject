@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guitar Fretboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+<div style="text-align:center; margin-bottom:20px;">
+    <input id="tabInput" type="text" placeholder="Enter tab (e.g. x02220 or x 0 2 2 2 0)" style="width:300px; padding:8px;">
+    <button onclick="drawChord()" style="padding:8px 12px;">Draw Chord</button>
+</div>
+
+<div style="text-align:center; margin-bottom:20px;">
+    <input id="tabInput" type="text" placeholder="e.g. x02220 or x 0 2 2 2 0">
+    <button onclick="drawChord()">Draw</button>
+</div>
+
+        .fretboard {
+            display: grid;
+            grid-template-rows: repeat(6, 50px);
+            gap: 4px;
+        }
+
+        .string {
+            display: grid;
+            grid-template-columns: repeat(13, 60px);
+        }
+
+        .fret {
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .fret.open {
+            background: #ddd;
+            font-weight: bold;
+        }
+
+        .fret.mark {
+            background: #222;
+            color: white;
+            border-radius: 50%;
+        }
+
+        .label {
+            width: 40px;
+            text-align: right;
+            padding-right: 8px;
+            font-weight: bold;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="board" class="fretboard"></div>
+
+<script>
+const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+// Standard tuning (top → bottom visually)
+const tuning = ["E","B","G","D","A","E"];
+
+// Convert note to index
+function findIndex(note) {
+    return notes.indexOf(note);
+}
+
+// ------------------ BUILD FRETBOARD ------------------
+function buildFretboard() {
+    const board = document.getElementById("board");
+
+    tuning.forEach(openNote => {
+
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.innerText = openNote;
+        row.appendChild(label);
+
+        const string = document.createElement("div");
+        string.className = "string";
+
+        let openIndex = findIndex(openNote);
+
+        for (let fret = 0; fret <= 12; fret++) {
+            const div = document.createElement("div");
+            div.className = "fret";
+
+            if (fret === 0) div.classList.add("open");
+
+            let note = notes[(openIndex + fret) % 12];
+            div.innerText = note;
+
+            // Keep your click toggle
+            div.addEventListener("click", () => {
+                div.classList.toggle("mark");
+            });
+
+            string.appendChild(div);
+        }
+
+        row.appendChild(string);
+        board.appendChild(row);
+    });
+}
+
+// ------------------ SMART PARSER ------------------
+function parseTab(input) {
+    input = input.trim();
+    let parts;
+
+    if (input.includes(" ")) {
+        parts = input.split(/\s+/);
+    } else if (input.includes(",")) {
+        parts = input.split(",");
+    } else {
+        if (input.length !== 6) {
+            throw "Compact format must be 6 characters (e.g. x02220)";
+        }
+        parts = input.split("");
+    }
+
+    if (parts.length !== 6) {
+        throw "Must represent exactly 6 strings";
+    }
+
+    return parts.map(p => {
+        p = p.trim().toLowerCase();
+
+        if (p === "x") return "x";
+
+        let fret = parseInt(p);
+        if (isNaN(fret) || fret < 0 || fret > 24) {
+            throw "Invalid fret: " + p;
+        }
+
+        return fret;
+    });
+}
+
+// ------------------ CLEAR BOARD ------------------
+function clearBoard() {
+    document.querySelectorAll(".fret").forEach(f => {
+        f.classList.remove("mark");
+    });
+}
+
+// ------------------ DRAW CHORD ------------------
+function drawChord() {
+    clearBoard();
+
+    const input = document.getElementById("tabInput").value;
+
+    let shape;
+    try {
+        shape = parseTab(input);
+    } catch (e) {
+        alert(e);
+        return;
+    }
+
+    const strings = document.querySelectorAll(".string");
+
+    // Flip because UI is high→low, input is low→high
+    for (let i = 0; i < 6; i++) {
+        let val = shape[i];
+
+        if (val === "x") continue;
+
+        let stringIndex = 5 - i;
+        let fret = val;
+
+        let cell = strings[stringIndex].children[fret];
+        if (cell) cell.classList.add("mark");
+    }
+}
+
+// ------------------ INIT ------------------
+buildFretboard();
+</script>
+
+</body>
+</html>
