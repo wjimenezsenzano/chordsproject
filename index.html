@@ -87,7 +87,7 @@
 <script src="./chordsDetector.js"></script>
 
 <script>
-const tuning = ["E","A","D","G","B","E"];
+const tuning = ["E","B","G","D","A","E"];
 
 // ---------------- STATE ----------------
 let selected = ["x","x","x","x","x","x"];
@@ -125,13 +125,13 @@ function buildFretboard() {
                 Array.from(string.children).forEach(f => f.classList.remove("mark"));
 
                 // toggle off if same fret clicked
-                if (selected[stringIndex] == fret.toString()) {
-                    selected[stringIndex] = "x";
+                if (selected[5-stringIndex] == fret.toString()) {
+                    selected[5-stringIndex] = "x";
                     updateOutput();
                     return;
                 }
 
-                selected[stringIndex] = String(fret);
+                selected[5-stringIndex] = String(fret);
                 div.classList.add("mark");
 
                 updateOutput();
@@ -198,7 +198,7 @@ function drawFromInput() {
             if (parsed[i] === "x") continue;
 
             const fret = parseInt(parsed[i]);
-            const cell = strings[i].children[fret];
+            const cell = strings[5 - i].children[fret];
             if (cell) cell.classList.add("mark");
         }
 
