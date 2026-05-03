@@ -87,17 +87,28 @@
 <script src="./chordsDetector.js"></script>
 
 <script>
-const tuning = ["E","B","G","D","A","E"];
+
+// ---------------- TUNINGS ----------------
+
+// Visual order (top → bottom on screen)
+const displayTuning = ["E","B","G","D","A","E"];
+
+// Logical/theory order (low → high)
+const logicalTuning = ["E","A","D","G","B","E"];
 
 // ---------------- STATE ----------------
+
+// ALWAYS stored low → high
+// [low E, A, D, G, B, high E]
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
+
 function buildFretboard() {
 
     const board = document.getElementById("board");
 
-    tuning.forEach((openNote, stringIndex) => {
+    displayTuning.forEach((openNote, visualStringIndex) => {
 
         const row = document.createElement("div");
         row.className = "row";
@@ -115,23 +126,34 @@ function buildFretboard() {
             const div = document.createElement("div");
             div.className = "fret";
 
-            if (fret === 0) div.classList.add("open");
+            if (fret === 0) {
+                div.classList.add("open");
+            }
 
             div.innerText = window.getNote(openNote, fret);
 
             div.addEventListener("click", () => {
 
-                // clear previous selection on this string
-                Array.from(string.children).forEach(f => f.classList.remove("mark"));
+                // Convert visual string index → logical string index
+                const logicalIndex = 5 - visualStringIndex;
 
-                // toggle off if same fret clicked
-                if (selected[5-stringIndex] == fret.toString()) {
-                    selected[5-stringIndex] = "x";
+                // Clear previous selection on THIS visual string
+                Array.from(string.children).forEach(f =>
+                    f.classList.remove("mark")
+                );
+
+                // Toggle OFF if same fret clicked
+                if (selected[logicalIndex] == fret.toString()) {
+
+                    selected[logicalIndex] = "x";
+
                     updateOutput();
                     return;
                 }
 
-                selected[5-stringIndex] = String(fret);
+                // Store fret logically low → high
+                selected[logicalIndex] = String(fret);
+
                 div.classList.add("mark");
 
                 updateOutput();
@@ -146,28 +168,36 @@ function buildFretboard() {
 }
 
 // ---------------- GET TAB STRING ----------------
+
 function getTabString() {
-    return selected.join("");
+    return selected.join(",");
 }
 
 // ---------------- UPDATE OUTPUT ----------------
+
 function updateOutput() {
 
     const output = document.getElementById("output");
 
     const tab = getTabString();
 
-    const notes = window.tabToOrderedNotes(tab, tuning);
+    const orderedNotes =
+        window.tabToOrderedNotes(tab, logicalTuning);
 
-    if (notes.length < 3) {
+    if (orderedNotes.length < 3) {
+
         output.innerText = "Select at least 3 notes...";
         return;
     }
 
-    const chords = window.detectChord(tab, tuning);
+    const chords =
+        window.detectChord(tab, logicalTuning);
 
     let text =
-        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
+        "Tab (low → high): " + tab + "\n\n" +
+        "Notes (low → high): " +
+        orderedNotes.join(" → ") +
+        "\n\n" +
         "Chords:\n";
 
     chords.slice(0, 5).forEach(c => {
@@ -177,40 +207,58 @@ function updateOutput() {
     output.innerText = text;
 }
 
-// ---------------- MANUAL INPUT SUPPORT ----------------
+// ---------------- MANUAL INPUT ----------------
+
 function drawFromInput() {
 
-    const input = document.getElementById("tabInput").value;
+    const input =
+        document.getElementById("tabInput").value;
 
     try {
+
         const parsed = window.parseTab(input);
 
-        // reset state
-        selected = parsed;
+        // Store logically low → high
+        selected = [...parsed];
 
-        // clear UI marks
-        document.querySelectorAll(".fret").forEach(f => f.classList.remove("mark"));
+        // Clear UI
+        document.querySelectorAll(".fret").forEach(f =>
+            f.classList.remove("mark")
+        );
 
-        // re-mark UI
-        const strings = document.querySelectorAll(".string");
+        const strings =
+            document.querySelectorAll(".string");
 
-        for (let i = 0; i < 6; i++) {
-            if (parsed[i] === "x") continue;
+        // parsed[] is low → high
+        for (let logicalIndex = 0; logicalIndex < 6; logicalIndex++) {
 
-            const fret = parseInt(parsed[i]);
-            const cell = strings[5 - i].children[fret];
-            if (cell) cell.classList.add("mark");
+            if (parsed[logicalIndex] === "x") continue;
+
+            const fret = parseInt(parsed[logicalIndex]);
+
+            // Convert logical → visual
+            const visualIndex = 5 - logicalIndex;
+
+            const cell =
+                strings[visualIndex].children[fret];
+
+            if (cell) {
+                cell.classList.add("mark");
+            }
         }
 
         updateOutput();
 
     } catch (e) {
+
         alert(e.message);
     }
 }
 
 // ---------------- INIT ----------------
+
 buildFretboard();
+
 </script>
 
 </body>
