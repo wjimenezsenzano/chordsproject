@@ -22,6 +22,7 @@
         --label-width: 40px;
         --fret-width: 50px;
         --gap: 2px;
+        --right-width: 140px;
     }
 
     /* CENTER WRAPPER */
@@ -35,7 +36,7 @@
 
     .row {
         display: grid;
-        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) 140px;
+        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) var(--right-width);
         gap: var(--gap);
         align-items: center;
     }
@@ -51,8 +52,9 @@
         color: #555;
     }
 
+    /* IMPORTANT: prevents layout mismatch */
     .string {
-        display: contents; /* IMPORTANT: makes cells align with row grid */
+        display: contents;
     }
 
     .fret {
@@ -78,11 +80,11 @@
     }
 
     /* =========================
-       MARKER ROW (SAME GRID)
+       MARKER ROW (MATCHES GRID)
     ========================= */
     .markerRow {
         display: grid;
-        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) 140px;
+        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) var(--right-width);
         gap: var(--gap);
         margin-top: 10px;
         justify-content: center;
@@ -143,26 +145,21 @@
     <div></div>
 </div>
 
-<!-- FRET INLAYS (DOTS) -->
+<!-- FRET INLAYS (CORRECT POSITIONS) -->
 <div class="markerRow">
     <div></div>
     <div></div>
     <div></div>
+    <div class="marker">•</div>   <!-- 3 -->
     <div></div>
-    <div></div>
-
     <div class="marker">•</div>   <!-- 5 -->
     <div></div>
-
     <div class="marker">•</div>   <!-- 7 -->
     <div></div>
-
     <div class="marker">•</div>   <!-- 9 -->
     <div></div>
     <div></div>
-
     <div class="marker">••</div>  <!-- 12 -->
-
     <div></div>
 </div>
 
