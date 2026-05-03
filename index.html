@@ -105,7 +105,6 @@
 </div>
 
 <div id="boardWrapper">
-
     <div id="board"></div>
 
     <div class="markerRow">
@@ -123,7 +122,6 @@
         <div class="marker"></div>
         <div class="marker">••</div>
     </div>
-
 </div>
 
 <div id="output">Select at least 3 notes...</div>
@@ -132,10 +130,13 @@
 
 <script>
 
-// ---------------- TUNING ----------------
-// index 0 = bottom string, index 5 = top string
-let displayTuning = ["E","A","D","G","B","E"];
+// ==============================
+// CORE RULE:
+// index 0 = bottom string
+// index 5 = top string
+// ==============================
 
+let displayTuning = ["E","A","D","G","B","E"]; // bottom → top
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
@@ -168,13 +169,13 @@ function buildFretboard() {
 
             div.addEventListener("click", () => {
 
-                const index = stringIndex; // ✅ DIRECT mapping (no inversion)
+                const index = stringIndex; // DIRECT mapping (NO inversion)
 
                 Array.from(string.children).forEach(f =>
                     f.classList.remove("mark")
                 );
 
-                if (selected[index] == fret.toString()) {
+                if (selected[index] === String(fret)) {
                     selected[index] = "x";
                 } else {
                     selected[index] = String(fret);
@@ -203,7 +204,6 @@ function buildFretboard() {
 
 // ---------------- ANALYZE ----------------
 function analyzeChord() {
-
     const input = document.getElementById("tabInput").value.trim();
 
     try {
@@ -216,7 +216,6 @@ function analyzeChord() {
 
 // ---------------- CHANGE TUNING ----------------
 function changeTuning() {
-
     const input = document.getElementById("tabInput").value.trim();
     const parts = input.split(",");
 
@@ -225,9 +224,7 @@ function changeTuning() {
         return;
     }
 
-    // bottom → top
     displayTuning = parts.map(n => n.trim().toUpperCase());
-
     selected = ["x","x","x","x","x","x"];
 
     buildFretboard();
@@ -238,9 +235,9 @@ function changeTuning() {
 function updateOutput() {
 
     const output = document.getElementById("output");
-
     const tab = selected.join(",");
 
+    // IMPORTANT: always bottom → top
     const notes = window.tabToOrderedNotes(tab, displayTuning);
 
     if (notes.length < 3) {
