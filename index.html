@@ -15,11 +15,13 @@
         margin-bottom: 10px;
     }
 
+    /* CENTER ENTIRE FRETBOARD */
     #board {
         display: flex;
         flex-direction: column;
         gap: 8px;
         margin-top: 20px;
+        align-items: center;
     }
 
     .row {
@@ -30,6 +32,14 @@
     .label {
         width: 40px;
         font-weight: bold;
+    }
+
+    .rightLabel {
+        width: 140px;
+        text-align: left;
+        margin-left: 10px;
+        font-size: 13px;
+        color: #555;
     }
 
     .string {
@@ -53,6 +63,23 @@
     .mark {
         background: black;
         color: white;
+    }
+
+    /* FRET MARKERS */
+    .markerRow {
+        display: grid;
+        grid-template-columns: repeat(13, 50px);
+        gap: 2px;
+
+        justify-content: center;
+
+        margin-top: 10px;
+    }
+
+    .marker {
+        font-size: 14px;
+        font-weight: bold;
+        height: 20px;
     }
 
     #output {
@@ -82,6 +109,32 @@
 
 <div id="board"></div>
 
+<!-- FRET MARKERS -->
+<div class="markerRow">
+
+    <div class="marker">0</div>
+    <div class="marker"></div>
+    <div class="marker"></div>
+    <div class="marker"></div>
+    <div class="marker"></div>
+
+    <div class="marker">5</div>
+
+    <div class="marker"></div>
+
+    <div class="marker">7</div>
+
+    <div class="marker"></div>
+
+    <div class="marker">9</div>
+
+    <div class="marker"></div>
+    <div class="marker"></div>
+
+    <div class="marker">12</div>
+
+</div>
+
 <div id="output">Select at least 3 notes...</div>
 
 <script src="./chordsDetector.js"></script>
@@ -90,16 +143,15 @@
 
 // ---------------- TUNINGS ----------------
 
-// Visual order (top → bottom on screen)
+// Visual order (top → bottom)
 const displayTuning = ["E","B","G","D","A","E"];
 
-// Logical/theory order (low → high)
+// Logical order (low → high)
 const logicalTuning = ["E","A","D","G","B","E"];
 
 // ---------------- STATE ----------------
 
-// ALWAYS stored low → high
-// [low E, A, D, G, B, high E]
+// Stored logically low → high
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
@@ -113,11 +165,13 @@ function buildFretboard() {
         const row = document.createElement("div");
         row.className = "row";
 
+        // LEFT LABEL
         const label = document.createElement("div");
         label.className = "label";
         label.innerText = openNote;
         row.appendChild(label);
 
+        // STRING GRID
         const string = document.createElement("div");
         string.className = "string";
 
@@ -134,15 +188,15 @@ function buildFretboard() {
 
             div.addEventListener("click", () => {
 
-                // Convert visual string index → logical string index
+                // Convert visual index → logical index
                 const logicalIndex = 5 - visualStringIndex;
 
-                // Clear previous selection on THIS visual string
+                // Clear previous selection on this string
                 Array.from(string.children).forEach(f =>
                     f.classList.remove("mark")
                 );
 
-                // Toggle OFF if same fret clicked
+                // Toggle off
                 if (selected[logicalIndex] == fret.toString()) {
 
                     selected[logicalIndex] = "x";
@@ -151,7 +205,7 @@ function buildFretboard() {
                     return;
                 }
 
-                // Store fret logically low → high
+                // Store fret logically
                 selected[logicalIndex] = String(fret);
 
                 div.classList.add("mark");
@@ -163,6 +217,21 @@ function buildFretboard() {
         }
 
         row.appendChild(string);
+
+        // RIGHT LABELS
+        const rightLabel = document.createElement("div");
+        rightLabel.className = "rightLabel";
+
+        if (visualStringIndex === 0) {
+            rightLabel.innerText = "(top string)";
+        }
+
+        if (visualStringIndex === 5) {
+            rightLabel.innerText = "(bottom string)";
+        }
+
+        row.appendChild(rightLabel);
+
         board.appendChild(row);
     });
 }
