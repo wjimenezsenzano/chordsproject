@@ -15,7 +15,16 @@
         margin-bottom: 10px;
     }
 
-    /* CENTER ENTIRE FRETBOARD */
+    /* =========================
+       GLOBAL GRID SETTINGS
+    ========================= */
+    :root {
+        --label-width: 40px;
+        --fret-width: 50px;
+        --gap: 2px;
+    }
+
+    /* CENTER WRAPPER */
     #board {
         display: flex;
         flex-direction: column;
@@ -25,35 +34,38 @@
     }
 
     .row {
-        display: flex;
+        display: grid;
+        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) 140px;
+        gap: var(--gap);
         align-items: center;
     }
 
     .label {
-        width: 40px;
         font-weight: bold;
+        text-align: center;
     }
 
     .rightLabel {
-        width: 140px;
         text-align: left;
-        margin-left: 10px;
         font-size: 13px;
         color: #555;
     }
 
     .string {
-        display: grid;
-        grid-template-columns: repeat(13, 50px);
-        gap: 2px;
+        display: contents; /* IMPORTANT: makes cells align with row grid */
     }
 
     .fret {
+        width: var(--fret-width);
+        height: 28px;
         border: 1px solid #333;
-        padding: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         user-select: none;
         font-size: 12px;
+        box-sizing: border-box;
     }
 
     .open {
@@ -65,11 +77,13 @@
         color: white;
     }
 
-    /* FIXED MARKER ROW ALIGNMENT */
+    /* =========================
+       MARKER ROW (SAME GRID)
+    ========================= */
     .markerRow {
         display: grid;
-        grid-template-columns: 40px repeat(13, 50px);
-        gap: 2px;
+        grid-template-columns: var(--label-width) repeat(13, var(--fret-width)) 140px;
+        gap: var(--gap);
         margin-top: 10px;
         justify-content: center;
     }
@@ -78,6 +92,9 @@
         font-size: 12px;
         font-weight: bold;
         height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     #output {
@@ -107,11 +124,9 @@
 
 <div id="board"></div>
 
-<!-- FULL FRET MARKERS 0–12 -->
+<!-- PERFECTLY ALIGNED MARKERS -->
 <div class="markerRow">
-
-    <div class="marker"></div> <!-- spacer for label column -->
-
+    <div></div>
     <div class="marker">0</div>
     <div class="marker">1</div>
     <div class="marker">2</div>
@@ -125,7 +140,7 @@
     <div class="marker">10</div>
     <div class="marker">11</div>
     <div class="marker">12</div>
-
+    <div></div>
 </div>
 
 <div id="output">Select at least 3 notes...</div>
@@ -154,7 +169,6 @@ function buildFretboard() {
         const label = document.createElement("div");
         label.className = "label";
         label.innerText = openNote;
-        row.appendChild(label);
 
         const string = document.createElement("div");
         string.className = "string";
@@ -189,14 +203,14 @@ function buildFretboard() {
             string.appendChild(div);
         }
 
-        row.appendChild(string);
-
         const rightLabel = document.createElement("div");
         rightLabel.className = "rightLabel";
 
         if (visualStringIndex === 0) rightLabel.innerText = "(top string)";
         if (visualStringIndex === 5) rightLabel.innerText = "(bottom string)";
 
+        row.appendChild(label);
+        row.appendChild(string);
         row.appendChild(rightLabel);
 
         board.appendChild(row);
@@ -217,7 +231,7 @@ function drawFromInput() {
             f.classList.remove("mark")
         );
 
-        const strings = document.querySelectorAll(".string");
+        const rows = document.querySelectorAll(".row");
 
         for (let logicalIndex = 0; logicalIndex < 6; logicalIndex++) {
 
@@ -226,7 +240,8 @@ function drawFromInput() {
             const fret = parseInt(parsed[logicalIndex]);
             const visualIndex = 5 - logicalIndex;
 
-            const cell = strings[visualIndex].children[fret];
+            const string = rows[visualIndex].querySelector(".string");
+            const cell = string.children[fret];
 
             if (cell) cell.classList.add("mark");
         }
