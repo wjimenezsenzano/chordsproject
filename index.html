@@ -5,24 +5,20 @@
 <title>Guitar Chord Detector</title>
 
 <style>
+    * { box-sizing: border-box; }
+
     body {
         font-family: Arial, sans-serif;
         text-align: center;
         margin: 20px;
     }
 
-    h2 {
-        margin-bottom: 10px;
-    }
+    h2 { margin-bottom: 10px; }
 
-    #controls {
-        margin-bottom: 10px;
-    }
+    #controls { margin-bottom: 10px; }
 
-    /* CENTER EVERYTHING */
     #boardWrapper {
         display: inline-block;
-        text-align: center;
     }
 
     #board {
@@ -50,11 +46,11 @@
         color: #555;
     }
 
-    /* SINGLE SOURCE OF TRUTH GRID */
-    .string {
+    .string,
+    .markerRow,
+    .numberRow {
         display: grid;
         grid-template-columns: repeat(13, 48px);
-        gap: 2px;
     }
 
     .fret {
@@ -65,29 +61,19 @@
         font-size: 12px;
     }
 
-    .open {
-        background: #ddd;
-    }
+    .open { background: #ddd; }
 
     .mark {
         background: black;
         color: white;
     }
 
-    /* FRET MARKERS (REALIGNED GRID) */
-    .markerRow {
-        display: grid;
-        grid-template-columns: repeat(13, 48px);
-        gap: 2px;
-
-        margin-top: 10px;
+    .marker, .number {
+        display: flex;
+        align-items: center;
         justify-content: center;
-    }
-
-    .marker {
-        font-size: 14px;
-        font-weight: bold;
-        height: 20px;
+        height: 18px;
+        font-size: 12px;
     }
 
     #output {
@@ -114,55 +100,50 @@
 <h2>Interactive Guitar Chord Builder</h2>
 
 <div id="controls">
-    <input id="tabInput" placeholder="x02220 OR E,A,D,G,B,E">
-    <button onclick="analyzeChord()">Analyze</button>
-    <button onclick="changeTuning()">Change Tuning</button>
+    <input id="tabInput" placeholder="x02220 OR Cmaj7 OR E,A,D,G,B,E">
+    <button onclick="handleInput()">Apply</button>
 </div>
 
 <div id="boardWrapper">
 
     <div id="board"></div>
 
-    <!-- 🎯 FIXED FRET MARKERS (aligned to grid columns) -->
     <div class="markerRow">
         <div class="marker">0</div>
-        <div class="marker"></div>
-        <div class="marker"></div>
-        <div class="marker"></div>
-        <div class="marker"></div>
+        <div></div><div></div><div></div><div></div>
+        <div class="marker">•</div>
+        <div></div>
+        <div class="marker">•</div>
+        <div></div>
+        <div class="marker">•</div>
+        <div></div><div></div>
+        <div class="marker">••</div>
+    </div>
 
-        <div class="marker">•</div> <!-- 5 -->
-
-        <div class="marker"></div>
-
-        <div class="marker">•</div> <!-- 7 -->
-
-        <div class="marker"></div>
-
-        <div class="marker">•</div> <!-- 9 -->
-
-        <div class="marker"></div>
-        <div class="marker"></div>
-
-        <div class="marker">••</div> <!-- 12 -->
+    <div class="numberRow">
+        <div class="number">0</div><div class="number">1</div><div class="number">2</div>
+        <div class="number">3</div><div class="number">4</div><div class="number">5</div>
+        <div class="number">6</div><div class="number">7</div><div class="number">8</div>
+        <div class="number">9</div><div class="number">10</div><div class="number">11</div>
+        <div class="number">12</div>
     </div>
 
 </div>
 
-<div id="output">Select at least 3 notes...</div>
+<div id="output">Enter a chord or tab...</div>
 
 <script src="./chordsDetector.js"></script>
 
 <script>
 
-// ---------------- TUNING ----------------
+// ---------------- STATE ----------------
 let displayTuning = ["E","B","G","D","A","E"];
 let logicalTuning = ["E","A","D","G","B","E"];
-
-// low → high
 let selected = ["x","x","x","x","x","x"];
 
-// ---------------- BUILD FRETBOARD ----------------
+const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+// ---------------- BUILD ----------------
 function buildFretboard() {
 
     const board = document.getElementById("board");
@@ -186,91 +167,110 @@ function buildFretboard() {
             const div = document.createElement("div");
             div.className = "fret";
 
-            // FIX: correct open string alignment
             if (fret === 0) div.classList.add("open");
 
             div.innerText = window.getNote(openNote, fret);
 
-            div.addEventListener("click", () => {
+            div.onclick = () => {
+                const i = 5 - visualIndex;
 
-                const logicalIndex = 5 - visualIndex;
-
-                Array.from(string.children).forEach(f =>
-                    f.classList.remove("mark")
-                );
-
-                if (selected[logicalIndex] == fret.toString()) {
-                    selected[logicalIndex] = "x";
-                    updateOutput();
-                    return;
+                if (selected[i] == fret) {
+                    selected[i] = "x";
+                } else {
+                    selected[i] = String(fret);
                 }
 
-                selected[logicalIndex] = String(fret);
-                div.classList.add("mark");
-
                 updateOutput();
-            });
+            };
 
             string.appendChild(div);
         }
 
         row.appendChild(string);
 
-        const rightLabel = document.createElement("div");
-        rightLabel.className = "rightLabel";
+        const right = document.createElement("div");
+        right.className = "rightLabel";
+        right.innerText =
+            visualIndex === 0 ? "(top string)" :
+            visualIndex === 5 ? "(bottom string)" : "";
 
-        if (visualIndex === 0) rightLabel.innerText = "(top string)";
-        if (visualIndex === 5) rightLabel.innerText = "(bottom string)";
-
-        row.appendChild(rightLabel);
+        row.appendChild(right);
 
         board.appendChild(row);
     });
 }
 
-// ---------------- ANALYZE ----------------
-function analyzeChord() {
+// ---------------- MAIN INPUT HANDLER ----------------
+function handleInput() {
 
     const input = document.getElementById("tabInput").value.trim();
 
-    try {
-        selected = window.parseTab(input);
-        updateOutput();
-    } catch (e) {
-        alert(e.message);
+    // CASE 1: TAB INPUT
+    if (input.includes("x") || /^[0-9x, ]+$/.test(input)) {
+
+        try {
+            selected = window.parseTab(input);
+            updateOutput();
+            return;
+        } catch (e) {
+            alert(e.message);
+            return;
+        }
     }
+
+    // CASE 2: CHORD NAME → generate voicing
+    generateChordVoicing(input);
 }
 
-// ---------------- CHANGE TUNING ----------------
-function changeTuning() {
+// ---------------- CHORD → FRETBOARD ----------------
+function generateChordVoicing(chordName) {
 
-    const input = document.getElementById("tabInput").value.trim();
-    const parts = input.split(",");
-
-    if (parts.length !== 6) {
-        alert("Need 6 notes (e.g. D,A,D,G,B,E)");
+    const root = chordName.match(/[A-G]#?/);
+    if (!root) {
+        alert("Invalid chord name");
         return;
     }
 
-    displayTuning = parts.map(n => n.trim().toUpperCase());
-    logicalTuning = [...displayTuning].reverse();
+    const rootNote = root[0];
+    const rootIndex = notes.indexOf(rootNote);
 
-    selected = ["x","x","x","x","x","x"];
+    // simple heuristic voicing (open position bias)
+    const voicing = [];
 
-    buildFretboard();
+    for (let i = 0; i < 6; i++) {
+
+        const openNote = displayTuning[i];
+        const openIndex = notes.indexOf(openNote);
+
+        let bestFret = "x";
+
+        for (let f = 0; f <= 5; f++) {
+            const note = notes[(openIndex + f) % 12];
+
+            if (note === rootNote) {
+                bestFret = f;
+                break;
+            }
+        }
+
+        voicing.push(bestFret.toString());
+    }
+
+    selected = voicing;
+
     updateOutput();
 }
 
 // ---------------- OUTPUT ----------------
 function updateOutput() {
 
-    const output = document.getElementById("output");
-
     const tab = selected.join(",");
 
-    const notes = window.tabToOrderedNotes(tab, logicalTuning);
+    const notesOut = window.tabToOrderedNotes(tab, logicalTuning);
 
-    if (notes.length < 3) {
+    const output = document.getElementById("output");
+
+    if (notesOut.length < 3) {
         output.innerText = "Select at least 3 notes...";
         return;
     }
@@ -278,7 +278,7 @@ function updateOutput() {
     const chords = window.detectChord(tab, logicalTuning);
 
     let text =
-        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
+        "Notes (low → high): " + notesOut.join(" → ") + "\n\n" +
         "Chords:\n";
 
     chords.slice(0, 5).forEach(c => {
@@ -286,6 +286,30 @@ function updateOutput() {
     });
 
     output.innerText = text;
+
+    syncUI();
+}
+
+// ---------------- SYNC UI ----------------
+function syncUI() {
+
+    const strings = document.querySelectorAll(".string");
+
+    document.querySelectorAll(".fret").forEach(f =>
+        f.classList.remove("mark")
+    );
+
+    for (let i = 0; i < 6; i++) {
+
+        if (selected[i] === "x") continue;
+
+        const visual = 5 - i;
+        const fret = parseInt(selected[i]);
+
+        const cell = strings[visual].children[fret];
+
+        if (cell) cell.classList.add("mark");
+    }
 }
 
 // ---------------- INIT ----------------
