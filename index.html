@@ -19,7 +19,6 @@
         margin-bottom: 10px;
     }
 
-    /* CENTER EVERYTHING */
     #boardWrapper {
         display: inline-block;
         text-align: center;
@@ -50,7 +49,6 @@
         color: #555;
     }
 
-    /* SINGLE SOURCE OF TRUTH GRID */
     .string {
         display: grid;
         grid-template-columns: repeat(13, 48px);
@@ -74,12 +72,10 @@
         color: white;
     }
 
-    /* FRET MARKERS (REALIGNED GRID) */
     .markerRow {
         display: grid;
         grid-template-columns: repeat(13, 48px);
         gap: 2px;
-
         margin-top: 10px;
         justify-content: center;
     }
@@ -123,28 +119,20 @@
 
     <div id="board"></div>
 
-    <!-- 🎯 FIXED FRET MARKERS (aligned to grid columns) -->
     <div class="markerRow">
         <div class="marker">0</div>
         <div class="marker"></div>
         <div class="marker"></div>
         <div class="marker"></div>
         <div class="marker"></div>
-
-        <div class="marker">•</div> <!-- 5 -->
-
+        <div class="marker">•</div>
         <div class="marker"></div>
-
-        <div class="marker">•</div> <!-- 7 -->
-
+        <div class="marker">•</div>
         <div class="marker"></div>
-
-        <div class="marker">•</div> <!-- 9 -->
-
+        <div class="marker">•</div>
         <div class="marker"></div>
         <div class="marker"></div>
-
-        <div class="marker">••</div> <!-- 12 -->
+        <div class="marker">••</div>
     </div>
 
 </div>
@@ -155,11 +143,14 @@
 
 <script>
 
-// ---------------- TUNING ----------------
+// ---------------- TUNING (FIXED) ----------------
+// visual: top → bottom
 let displayTuning = ["E","B","G","D","A","E"];
+
+// logical: ALWAYS low → high (NEVER derived incorrectly again)
 let logicalTuning = ["E","A","D","G","B","E"];
 
-// low → high
+// state (low → high string order)
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
@@ -186,7 +177,6 @@ function buildFretboard() {
             const div = document.createElement("div");
             div.className = "fret";
 
-            // FIX: correct open string alignment
             if (fret === 0) div.classList.add("open");
 
             div.innerText = window.getNote(openNote, fret);
@@ -241,18 +231,21 @@ function analyzeChord() {
     }
 }
 
-// ---------------- CHANGE TUNING ----------------
+// ---------------- CHANGE TUNING (FIXED CORE BUG) ----------------
 function changeTuning() {
 
     const input = document.getElementById("tabInput").value.trim();
     const parts = input.split(",");
 
     if (parts.length !== 6) {
-        alert("Need 6 notes (e.g. D,A,D,G,B,E)");
+        alert("Need 6 notes (e.g. E,B,G,D,A,E)");
         return;
     }
 
+    // TOP → BOTTOM (visual order)
     displayTuning = parts.map(n => n.trim().toUpperCase());
+
+    // FIX: ALWAYS derive low → high correctly
     logicalTuning = [...displayTuning].reverse();
 
     selected = ["x","x","x","x","x","x"];
