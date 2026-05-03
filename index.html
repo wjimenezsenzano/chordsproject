@@ -65,15 +65,15 @@
         color: white;
     }
 
-    /* FRET MARKERS */
+    /* =========================
+       FIXED ALIGNMENT (KEY FIX)
+       ========================= */
     .markerRow {
         display: grid;
-        grid-template-columns: repeat(13, 50px);
+        grid-template-columns: 40px repeat(13, 50px);
         gap: 2px;
-
-        justify-content: center;
-
         margin-top: 10px;
+        justify-content: center;
     }
 
     .marker {
@@ -109,11 +109,12 @@
 
 <div id="board"></div>
 
-<!-- FRET MARKERS -->
+<!-- FRET MARKERS (SHIFTED BY 1 COLUMN FOR LABEL SPACE) -->
 <div class="markerRow">
 
-    <div class="marker">0</div>
     <div class="marker"></div>
+
+    <div class="marker">0</div>
     <div class="marker"></div>
     <div class="marker"></div>
     <div class="marker"></div>
@@ -142,36 +143,28 @@
 <script>
 
 // ---------------- TUNINGS ----------------
-
-// Visual order (top → bottom)
 const displayTuning = ["E","B","G","D","A","E"];
-
-// Logical order (low → high)
 const logicalTuning = ["E","A","D","G","B","E"];
 
 // ---------------- STATE ----------------
-
-// Stored logically low → high
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
-
 function buildFretboard() {
 
     const board = document.getElementById("board");
+    board.innerHTML = "";
 
     displayTuning.forEach((openNote, visualStringIndex) => {
 
         const row = document.createElement("div");
         row.className = "row";
 
-        // LEFT LABEL
         const label = document.createElement("div");
         label.className = "label";
         label.innerText = openNote;
         row.appendChild(label);
 
-        // STRING GRID
         const string = document.createElement("div");
         string.className = "string";
 
@@ -180,35 +173,24 @@ function buildFretboard() {
             const div = document.createElement("div");
             div.className = "fret";
 
-            if (fret === 0) {
-                div.classList.add("open");
-            }
+            if (fret === 0) div.classList.add("open");
 
             div.innerText = window.getNote(openNote, fret);
 
             div.addEventListener("click", () => {
 
-                // Convert visual index → logical index
                 const logicalIndex = 5 - visualStringIndex;
 
-                // Clear previous selection on this string
                 Array.from(string.children).forEach(f =>
                     f.classList.remove("mark")
                 );
 
-                // Toggle off
                 if (selected[logicalIndex] == fret.toString()) {
-
                     selected[logicalIndex] = "x";
-
-                    updateOutput();
-                    return;
+                } else {
+                    selected[logicalIndex] = String(fret);
+                    div.classList.add("mark");
                 }
-
-                // Store fret logically
-                selected[logicalIndex] = String(fret);
-
-                div.classList.add("mark");
 
                 updateOutput();
             });
@@ -218,17 +200,11 @@ function buildFretboard() {
 
         row.appendChild(string);
 
-        // RIGHT LABELS
         const rightLabel = document.createElement("div");
         rightLabel.className = "rightLabel";
 
-        if (visualStringIndex === 0) {
-            rightLabel.innerText = "(top string)";
-        }
-
-        if (visualStringIndex === 5) {
-            rightLabel.innerText = "(bottom string)";
-        }
+        if (visualStringIndex === 0) rightLabel.innerText = "(top string)";
+        if (visualStringIndex === 5) rightLabel.innerText = "(bottom string)";
 
         row.appendChild(rightLabel);
 
@@ -236,37 +212,28 @@ function buildFretboard() {
     });
 }
 
-// ---------------- GET TAB STRING ----------------
-
+// ---------------- GET TAB ----------------
 function getTabString() {
     return selected.join(",");
 }
 
-// ---------------- UPDATE OUTPUT ----------------
-
+// ---------------- OUTPUT ----------------
 function updateOutput() {
 
     const output = document.getElementById("output");
-
     const tab = getTabString();
 
-    const orderedNotes =
-        window.tabToOrderedNotes(tab, logicalTuning);
+    const notes = window.tabToOrderedNotes(tab, logicalTuning);
 
-    if (orderedNotes.length < 3) {
-
+    if (notes.length < 3) {
         output.innerText = "Select at least 3 notes...";
         return;
     }
 
-    const chords =
-        window.detectChord(tab, logicalTuning);
+    const chords = window.detectChord(tab, logicalTuning);
 
     let text =
-        "Tab (low → high): " + tab + "\n\n" +
-        "Notes (low → high): " +
-        orderedNotes.join(" → ") +
-        "\n\n" +
+        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
         "Chords:\n";
 
     chords.slice(0, 5).forEach(c => {
@@ -276,56 +243,42 @@ function updateOutput() {
     output.innerText = text;
 }
 
-// ---------------- MANUAL INPUT ----------------
-
+// ---------------- INPUT ----------------
 function drawFromInput() {
 
-    const input =
-        document.getElementById("tabInput").value;
+    const input = document.getElementById("tabInput").value;
 
     try {
-
         const parsed = window.parseTab(input);
 
-        // Store logically low → high
         selected = [...parsed];
 
-        // Clear UI
         document.querySelectorAll(".fret").forEach(f =>
             f.classList.remove("mark")
         );
 
-        const strings =
-            document.querySelectorAll(".string");
+        const strings = document.querySelectorAll(".string");
 
-        // parsed[] is low → high
         for (let logicalIndex = 0; logicalIndex < 6; logicalIndex++) {
 
             if (parsed[logicalIndex] === "x") continue;
 
             const fret = parseInt(parsed[logicalIndex]);
-
-            // Convert logical → visual
             const visualIndex = 5 - logicalIndex;
 
-            const cell =
-                strings[visualIndex].children[fret];
+            const cell = strings[visualIndex].children[fret];
 
-            if (cell) {
-                cell.classList.add("mark");
-            }
+            if (cell) cell.classList.add("mark");
         }
 
         updateOutput();
 
     } catch (e) {
-
         alert(e.message);
     }
 }
 
 // ---------------- INIT ----------------
-
 buildFretboard();
 
 </script>
