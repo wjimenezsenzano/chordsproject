@@ -11,13 +11,9 @@
         margin: 20px;
     }
 
-    h2 {
-        margin-bottom: 10px;
-    }
+    h2 { margin-bottom: 10px; }
 
-    #controls {
-        margin-bottom: 10px;
-    }
+    #controls { margin-bottom: 10px; }
 
     #boardWrapper {
         display: inline-block;
@@ -63,14 +59,7 @@
         font-size: 12px;
     }
 
-    .open {
-        background: #ddd;
-    }
-
-    .mark {
-        background: black;
-        color: white;
-    }
+    .open { background: #ddd; }
 
     .markerRow {
         display: grid;
@@ -143,14 +132,10 @@
 
 <script>
 
-// ---------------- TUNING (FIXED) ----------------
-// visual: top → bottom
-let displayTuning = ["E","B","G","D","A","E"];
+// ---------------- TUNING ----------------
+// index 0 = bottom string, index 5 = top string
+let displayTuning = ["E","A","D","G","B","E"];
 
-// logical: ALWAYS low → high (NEVER derived incorrectly again)
-let logicalTuning = ["E","A","D","G","B","E"];
-
-// state (low → high string order)
 let selected = ["x","x","x","x","x","x"];
 
 // ---------------- BUILD FRETBOARD ----------------
@@ -159,7 +144,7 @@ function buildFretboard() {
     const board = document.getElementById("board");
     board.innerHTML = "";
 
-    displayTuning.forEach((openNote, visualIndex) => {
+    displayTuning.forEach((openNote, stringIndex) => {
 
         const row = document.createElement("div");
         row.className = "row";
@@ -183,20 +168,18 @@ function buildFretboard() {
 
             div.addEventListener("click", () => {
 
-                const logicalIndex = 5 - visualIndex;
+                const index = stringIndex; // ✅ DIRECT mapping (no inversion)
 
                 Array.from(string.children).forEach(f =>
                     f.classList.remove("mark")
                 );
 
-                if (selected[logicalIndex] == fret.toString()) {
-                    selected[logicalIndex] = "x";
-                    updateOutput();
-                    return;
+                if (selected[index] == fret.toString()) {
+                    selected[index] = "x";
+                } else {
+                    selected[index] = String(fret);
+                    div.classList.add("mark");
                 }
-
-                selected[logicalIndex] = String(fret);
-                div.classList.add("mark");
 
                 updateOutput();
             });
@@ -209,8 +192,8 @@ function buildFretboard() {
         const rightLabel = document.createElement("div");
         rightLabel.className = "rightLabel";
 
-        if (visualIndex === 0) rightLabel.innerText = "(top string)";
-        if (visualIndex === 5) rightLabel.innerText = "(bottom string)";
+        if (stringIndex === 0) rightLabel.innerText = "(bottom string)";
+        if (stringIndex === 5) rightLabel.innerText = "(top string)";
 
         row.appendChild(rightLabel);
 
@@ -231,22 +214,19 @@ function analyzeChord() {
     }
 }
 
-// ---------------- CHANGE TUNING (FIXED CORE BUG) ----------------
+// ---------------- CHANGE TUNING ----------------
 function changeTuning() {
 
     const input = document.getElementById("tabInput").value.trim();
     const parts = input.split(",");
 
     if (parts.length !== 6) {
-        alert("Need 6 notes (e.g. E,B,G,D,A,E)");
+        alert("Need 6 notes (bottom → top)");
         return;
     }
 
-    // TOP → BOTTOM (visual order)
+    // bottom → top
     displayTuning = parts.map(n => n.trim().toUpperCase());
-
-    // FIX: ALWAYS derive low → high correctly
-    logicalTuning = [...displayTuning].reverse();
 
     selected = ["x","x","x","x","x","x"];
 
@@ -261,17 +241,17 @@ function updateOutput() {
 
     const tab = selected.join(",");
 
-    const notes = window.tabToOrderedNotes(tab, logicalTuning);
+    const notes = window.tabToOrderedNotes(tab, displayTuning);
 
     if (notes.length < 3) {
         output.innerText = "Select at least 3 notes...";
         return;
     }
 
-    const chords = window.detectChord(tab, logicalTuning);
+    const chords = window.detectChord(tab, displayTuning);
 
     let text =
-        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
+        "Notes (bottom → top): " + notes.join(" → ") + "\n\n" +
         "Chords:\n";
 
     chords.slice(0, 5).forEach(c => {
