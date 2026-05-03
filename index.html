@@ -17,9 +17,7 @@
 
     #controls { margin-bottom: 10px; }
 
-    #boardWrapper {
-        display: inline-block;
-    }
+    #boardWrapper { display: inline-block; }
 
     #board {
         display: flex;
@@ -76,12 +74,6 @@
         font-size: 12px;
     }
 
-    #output {
-        margin-top: 20px;
-        white-space: pre-line;
-        font-family: monospace;
-    }
-
     input {
         padding: 8px;
         width: 260px;
@@ -91,6 +83,12 @@
         padding: 8px 12px;
         cursor: pointer;
         margin-left: 5px;
+    }
+
+    #output {
+        margin-top: 20px;
+        white-space: pre-line;
+        font-family: monospace;
     }
 </style>
 </head>
@@ -109,23 +107,15 @@
     <div id="board"></div>
 
     <div class="markerRow">
-        <div class="marker">0</div>
-        <div></div><div></div><div></div><div></div>
-        <div class="marker">•</div>
-        <div></div>
-        <div class="marker">•</div>
-        <div></div>
-        <div class="marker">•</div>
-        <div></div><div></div>
-        <div class="marker">••</div>
+        <div>0</div><div></div><div></div><div></div><div></div>
+        <div>•</div><div></div><div>•</div><div></div><div>•</div>
+        <div></div><div></div><div>••</div>
     </div>
 
     <div class="numberRow">
-        <div class="number">0</div><div class="number">1</div><div class="number">2</div>
-        <div class="number">3</div><div class="number">4</div><div class="number">5</div>
-        <div class="number">6</div><div class="number">7</div><div class="number">8</div>
-        <div class="number">9</div><div class="number">10</div><div class="number">11</div>
-        <div class="number">12</div>
+        <div>0</div><div>1</div><div>2</div><div>3</div><div>4</div>
+        <div>5</div><div>6</div><div>7</div><div>8</div><div>9</div>
+        <div>10</div><div>11</div><div>12</div>
     </div>
 
 </div>
@@ -172,6 +162,7 @@ function buildFretboard() {
             div.innerText = window.getNote(openNote, fret);
 
             div.onclick = () => {
+
                 const i = 5 - visualIndex;
 
                 if (selected[i] == fret) {
@@ -191,8 +182,8 @@ function buildFretboard() {
         const right = document.createElement("div");
         right.className = "rightLabel";
         right.innerText =
-            visualIndex === 0 ? "(top string)" :
-            visualIndex === 5 ? "(bottom string)" : "";
+            visualIndex === 0 ? "(top)" :
+            visualIndex === 5 ? "(bottom)" : "";
 
         row.appendChild(right);
 
@@ -200,63 +191,48 @@ function buildFretboard() {
     });
 }
 
-// ---------------- MAIN INPUT HANDLER ----------------
+// ---------------- INPUT HANDLER ----------------
 function handleInput() {
 
     const input = document.getElementById("tabInput").value.trim();
 
-    // CASE 1: TAB INPUT
+    // TAB MODE
     if (input.includes("x") || /^[0-9x, ]+$/.test(input)) {
-
-        try {
-            selected = window.parseTab(input);
-            updateOutput();
-            return;
-        } catch (e) {
-            alert(e.message);
-            return;
-        }
-    }
-
-    // CASE 2: CHORD NAME → generate voicing
-    generateChordVoicing(input);
-}
-
-// ---------------- CHORD → FRETBOARD ----------------
-function generateChordVoicing(chordName) {
-
-    const root = chordName.match(/[A-G]#?/);
-    if (!root) {
-        alert("Invalid chord name");
+        selected = window.parseTab(input);
+        updateOutput();
         return;
     }
 
+    // CHORD NAME MODE (SAFE VERSION)
+    applyChordHint(input);
+}
+
+// ---------------- CHORD NAME HANDLER ----------------
+function applyChordHint(chord) {
+
+    const root = chord.match(/[A-G]#?/);
+    if (!root) return;
+
     const rootNote = root[0];
-    const rootIndex = notes.indexOf(rootNote);
 
-    // simple heuristic voicing (open position bias)
-    const voicing = [];
-
+    // SAFE BEHAVIOR:
+    // just suggest open-position root alignment
     for (let i = 0; i < 6; i++) {
 
-        const openNote = displayTuning[i];
-        const openIndex = notes.indexOf(openNote);
+        const open = displayTuning[i];
+        const openIdx = notes.indexOf(open);
 
-        let bestFret = "x";
+        let found = "x";
 
         for (let f = 0; f <= 5; f++) {
-            const note = notes[(openIndex + f) % 12];
-
-            if (note === rootNote) {
-                bestFret = f;
+            if (notes[(openIdx + f) % 12] === rootNote) {
+                found = String(f);
                 break;
             }
         }
 
-        voicing.push(bestFret.toString());
+        selected[i] = found;
     }
-
-    selected = voicing;
 
     updateOutput();
 }
