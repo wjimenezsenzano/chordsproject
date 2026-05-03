@@ -65,9 +65,7 @@
         color: white;
     }
 
-    /* =========================
-       FIXED ALIGNMENT (KEY FIX)
-       ========================= */
+    /* FIXED MARKER ROW ALIGNMENT */
     .markerRow {
         display: grid;
         grid-template-columns: 40px repeat(13, 50px);
@@ -77,7 +75,7 @@
     }
 
     .marker {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: bold;
         height: 20px;
     }
@@ -109,29 +107,23 @@
 
 <div id="board"></div>
 
-<!-- FRET MARKERS (SHIFTED BY 1 COLUMN FOR LABEL SPACE) -->
+<!-- FULL FRET MARKERS 0–12 -->
 <div class="markerRow">
 
-    <div class="marker"></div>
+    <div class="marker"></div> <!-- spacer for label column -->
 
     <div class="marker">0</div>
-    <div class="marker"></div>
-    <div class="marker"></div>
-    <div class="marker"></div>
-
+    <div class="marker">1</div>
+    <div class="marker">2</div>
+    <div class="marker">3</div>
+    <div class="marker">4</div>
     <div class="marker">5</div>
-
-    <div class="marker"></div>
-
+    <div class="marker">6</div>
     <div class="marker">7</div>
-
-    <div class="marker"></div>
-
+    <div class="marker">8</div>
     <div class="marker">9</div>
-
-    <div class="marker"></div>
-    <div class="marker"></div>
-
+    <div class="marker">10</div>
+    <div class="marker">11</div>
     <div class="marker">12</div>
 
 </div>
@@ -153,7 +145,6 @@ let selected = ["x","x","x","x","x","x"];
 function buildFretboard() {
 
     const board = document.getElementById("board");
-    board.innerHTML = "";
 
     displayTuning.forEach((openNote, visualStringIndex) => {
 
@@ -212,37 +203,6 @@ function buildFretboard() {
     });
 }
 
-// ---------------- GET TAB ----------------
-function getTabString() {
-    return selected.join(",");
-}
-
-// ---------------- OUTPUT ----------------
-function updateOutput() {
-
-    const output = document.getElementById("output");
-    const tab = getTabString();
-
-    const notes = window.tabToOrderedNotes(tab, logicalTuning);
-
-    if (notes.length < 3) {
-        output.innerText = "Select at least 3 notes...";
-        return;
-    }
-
-    const chords = window.detectChord(tab, logicalTuning);
-
-    let text =
-        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
-        "Chords:\n";
-
-    chords.slice(0, 5).forEach(c => {
-        text += `${c.name} (${c.score.toFixed(2)})\n`;
-    });
-
-    output.innerText = text;
-}
-
 // ---------------- INPUT ----------------
 function drawFromInput() {
 
@@ -276,6 +236,32 @@ function drawFromInput() {
     } catch (e) {
         alert(e.message);
     }
+}
+
+// ---------------- OUTPUT ----------------
+function updateOutput() {
+
+    const output = document.getElementById("output");
+    const tab = selected.join(",");
+
+    const notes = window.tabToOrderedNotes(tab, logicalTuning);
+
+    if (notes.length < 3) {
+        output.innerText = "Select at least 3 notes...";
+        return;
+    }
+
+    const chords = window.detectChord(tab, logicalTuning);
+
+    let text =
+        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
+        "Chords:\n";
+
+    chords.slice(0, 5).forEach(c => {
+        text += `${c.name} (${c.score.toFixed(2)})\n`;
+    });
+
+    output.innerText = text;
 }
 
 // ---------------- INIT ----------------
