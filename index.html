@@ -489,26 +489,31 @@ function buildFretboard() {
 // HIGHLIGHT FRETBOARD FROM NOTES
 // =====================================
 
-function highlightFretboard(notes) {
+function highlightFretboard() {
 
+    // clear all highlights
     document.querySelectorAll(".fret").forEach(f =>
         f.classList.remove("mark")
     );
 
     const displayTuning = getDisplayTuning();
 
-    document.querySelectorAll(".row").forEach((row, visualIndex) => {
+    displayTuning.forEach((openNote, visualIndex) => {
 
-        const stringDiv = row.querySelector(".string");
-        const openNote = displayTuning[visualIndex];
+        const logicalIndex = 5 - visualIndex;
+        const fret = selected[logicalIndex];
 
-        for (let fret = 0; fret <= 12; fret++) {
+        if (fret === "x") return;
 
-            const note = window.getNote(openNote, fret);
+        const stringRow =
+            document.querySelectorAll(".row")[visualIndex]
+                .querySelector(".string");
 
-            if (notes.includes(note)) {
-                stringDiv.children[fret].classList.add("mark");
-            }
+        const cell =
+            stringRow.children[parseInt(fret)];
+
+        if (cell) {
+            cell.classList.add("mark");
         }
     });
 }
@@ -585,7 +590,7 @@ function updateOutput() {
 
     // UPDATE BOTH VISUALIZERS
     updatePiano(notes);
-    highlightFretboard(notes);
+    highlightFretboard();
 
     if (notes.length < 3) {
         output.innerText = "Select at least 3 notes...";
