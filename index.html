@@ -350,7 +350,6 @@
 </div>
 
 <script src="./chordsDetector.js"></script>
-
 <script>
 
 // =====================================
@@ -378,6 +377,9 @@ function getDisplayTuning() {
 
 let selected = ["x","x","x","x","x","x"];
 
+// THIS is now the SINGLE SOURCE of truth for highlighting
+let lastAnalyzedNotes = [];
+
 // =====================================
 // BUILD TUNING DROPDOWNS
 // =====================================
@@ -393,9 +395,7 @@ function buildTuningSelectors() {
 
         NOTE_OPTIONS.forEach(note => {
 
-            const option =
-                document.createElement("option");
-
+            const option = document.createElement("option");
             option.value = note;
             option.innerText = note;
 
@@ -422,48 +422,36 @@ function buildTuningSelectors() {
 
 function buildFretboard() {
 
-    const board =
-        document.getElementById("board");
-
+    const board = document.getElementById("board");
     board.innerHTML = "";
 
     const displayTuning = getDisplayTuning();
 
     displayTuning.forEach((openNote, visualStringIndex) => {
 
-        const row =
-            document.createElement("div");
-
+        const row = document.createElement("div");
         row.className = "row";
 
-        const label =
-            document.createElement("div");
-
+        const label = document.createElement("div");
         label.className = "label";
         label.innerText = openNote;
 
-        const string =
-            document.createElement("div");
-
+        const string = document.createElement("div");
         string.className = "string";
 
         for (let fret = 0; fret <= 12; fret++) {
 
-            const div =
-                document.createElement("div");
-
+            const div = document.createElement("div");
             div.className = "fret";
 
-            if (fret === 0) {
-                div.classList.add("open");
-            }
+            if (fret === 0) div.classList.add("open");
 
-            div.innerText =
-                window.getNote(openNote, fret);
+            const note = window.getNote(openNote, fret);
+            div.innerText = note;
 
-            const logicalIndex =
-                5 - visualStringIndex;
+            const logicalIndex = 5 - visualStringIndex;
 
+            // restore clicked state
             if (selected[logicalIndex] === String(fret)) {
                 div.classList.add("mark");
             }
@@ -475,13 +463,9 @@ function buildFretboard() {
                 );
 
                 if (selected[logicalIndex] === String(fret)) {
-
                     selected[logicalIndex] = "x";
-
                 } else {
-
                     selected[logicalIndex] = String(fret);
-
                     div.classList.add("mark");
                 }
 
@@ -491,24 +475,41 @@ function buildFretboard() {
             string.appendChild(div);
         }
 
-        const rightLabel =
-            document.createElement("div");
-
-        rightLabel.className = "rightLabel";
-
-        if (visualStringIndex === 0) {
-            rightLabel.innerText = "(top string)";
-        }
-
-        if (visualStringIndex === 5) {
-            rightLabel.innerText = "(bottom string)";
-        }
-
         row.appendChild(label);
         row.appendChild(string);
-        row.appendChild(rightLabel);
 
         board.appendChild(row);
+    });
+
+    // IMPORTANT: re-apply chord highlight after rebuild
+    highlightFretboard(lastAnalyzedNotes);
+}
+
+// =====================================
+// HIGHLIGHT FRETBOARD FROM NOTES
+// =====================================
+
+function highlightFretboard(notes) {
+
+    document.querySelectorAll(".fret").forEach(f =>
+        f.classList.remove("mark")
+    );
+
+    const displayTuning = getDisplayTuning();
+
+    document.querySelectorAll(".row").forEach((row, visualIndex) => {
+
+        const stringDiv = row.querySelector(".string");
+        const openNote = displayTuning[visualIndex];
+
+        for (let fret = 0; fret <= 12; fret++) {
+
+            const note = window.getNote(openNote, fret);
+
+            if (notes.includes(note)) {
+                stringDiv.children[fret].classList.add("mark");
+            }
+        }
     });
 }
 
@@ -529,9 +530,7 @@ function updatePiano(notes) {
 
         if (!key) return;
 
-        const dot =
-            document.createElement("div");
-
+        const dot = document.createElement("div");
         dot.className = "dot";
 
         if (key.classList.contains("blackKey")) {
@@ -561,68 +560,48 @@ function drawFromInput() {
         selected = [...parsed];
 
         buildFretboard();
-
         updateOutput();
 
     } catch (e) {
-
         alert(e.message);
     }
 }
 
 // =====================================
-// OUTPUT
+// OUTPUT (MAIN FIX HERE)
 // =====================================
 
 function updateOutput() {
 
-    const output =
-        document.getElementById("output");
+    const output = document.getElementById("output");
 
-    const tab =
-        selected.join(",");
+    const tab = selected.join(",");
 
     const notes =
-        window.tabToOrderedNotes(
-            tab,
-            logicalTuning
-        );
+        window.tabToOrderedNotes(tab, logicalTuning);
 
+    // SAVE for UI syncing
+    lastAnalyzedNotes = notes;
+
+    // UPDATE BOTH VISUALIZERS
     updatePiano(notes);
+    highlightFretboard(notes);
 
     if (notes.length < 3) {
-
-        output.innerText =
-            "Select at least 3 notes...";
-
+        output.innerText = "Select at least 3 notes...";
         return;
     }
 
     const chords =
-        window.detectChord(
-            tab,
-            logicalTuning
-        );
+        window.detectChord(tab, logicalTuning);
 
     let text =
-        "Tuning (low → high): " +
-        logicalTuning.join(" ") +
-        "\n\n" +
-
-        "Tab (low → high): " +
-        tab +
-        "\n\n" +
-
-        "Notes (low → high): " +
-        notes.join(" → ") +
-        "\n\n" +
-
+        "Tab (low → high): " + tab + "\n\n" +
+        "Notes (low → high): " + notes.join(" → ") + "\n\n" +
         "Chords:\n";
 
     chords.slice(0, 5).forEach(c => {
-
-        text +=
-            `${c.name} (${c.score.toFixed(2)})\n`;
+        text += `${c.name} (${c.score.toFixed(2)})\n`;
     });
 
     output.innerText = text;
@@ -636,6 +615,3 @@ buildTuningSelectors();
 buildFretboard();
 
 </script>
-
-</body>
-</html>
