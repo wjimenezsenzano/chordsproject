@@ -135,6 +135,75 @@
         padding: 8px 12px;
         cursor: pointer;
     }
+
+    /* =========================
+       PIANO
+    ========================= */
+
+    #pianoContainer {
+        margin-top: 40px;
+    }
+
+    #piano {
+        position: relative;
+        width: 560px;
+        height: 180px;
+        margin: 0 auto;
+    }
+
+    .whiteKey {
+        position: relative;
+        width: 80px;
+        height: 180px;
+        border: 1px solid black;
+        background: white;
+        box-sizing: border-box;
+        float: left;
+    }
+
+    .blackKey {
+        position: absolute;
+        width: 50px;
+        height: 110px;
+        background: black;
+        top: 0;
+        z-index: 2;
+    }
+
+    .dot {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: red;
+        border-radius: 50%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .whiteDot {
+        bottom: 18px;
+        z-index: 3;
+    }
+
+    .blackDot {
+        bottom: 12px;
+        background: red;
+        z-index: 4;
+    }
+
+    .keyLabel {
+        position: absolute;
+        bottom: 2px;
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        color: black;
+    }
+
+    .blackLabel {
+        color: white;
+    }
+
 </style>
 </head>
 
@@ -219,6 +288,67 @@
 
 <div id="output">Select at least 3 notes...</div>
 
+<!-- PIANO -->
+<div id="pianoContainer">
+
+    <h3>Piano Visualizer</h3>
+
+    <div id="piano">
+
+        <!-- WHITE KEYS -->
+        <div class="whiteKey" data-note="C">
+            <div class="keyLabel">C</div>
+        </div>
+
+        <div class="whiteKey" data-note="D">
+            <div class="keyLabel">D</div>
+        </div>
+
+        <div class="whiteKey" data-note="E">
+            <div class="keyLabel">E</div>
+        </div>
+
+        <div class="whiteKey" data-note="F">
+            <div class="keyLabel">F</div>
+        </div>
+
+        <div class="whiteKey" data-note="G">
+            <div class="keyLabel">G</div>
+        </div>
+
+        <div class="whiteKey" data-note="A">
+            <div class="keyLabel">A</div>
+        </div>
+
+        <div class="whiteKey" data-note="B">
+            <div class="keyLabel">B</div>
+        </div>
+
+        <!-- BLACK KEYS -->
+        <div class="blackKey" data-note="C#" style="left:55px;">
+            <div class="keyLabel blackLabel">C#</div>
+        </div>
+
+        <div class="blackKey" data-note="D#" style="left:135px;">
+            <div class="keyLabel blackLabel">D#</div>
+        </div>
+
+        <div class="blackKey" data-note="F#" style="left:295px;">
+            <div class="keyLabel blackLabel">F#</div>
+        </div>
+
+        <div class="blackKey" data-note="G#" style="left:375px;">
+            <div class="keyLabel blackLabel">G#</div>
+        </div>
+
+        <div class="blackKey" data-note="A#" style="left:455px;">
+            <div class="keyLabel blackLabel">A#</div>
+        </div>
+
+    </div>
+
+</div>
+
 <script src="./chordsDetector.js"></script>
 
 <script>
@@ -234,8 +364,6 @@ const NOTE_OPTIONS = [
 
 // =====================================
 // TUNING
-// logical = low → high
-// display = top → bottom
 // =====================================
 
 let logicalTuning = ["E","A","D","G","B","E"];
@@ -308,14 +436,12 @@ function buildFretboard() {
 
         row.className = "row";
 
-        // LABEL
         const label =
             document.createElement("div");
 
         label.className = "label";
         label.innerText = openNote;
 
-        // STRING
         const string =
             document.createElement("div");
 
@@ -338,7 +464,6 @@ function buildFretboard() {
             const logicalIndex =
                 5 - visualStringIndex;
 
-            // restore previous marks
             if (selected[logicalIndex] === String(fret)) {
                 div.classList.add("mark");
             }
@@ -366,7 +491,6 @@ function buildFretboard() {
             string.appendChild(div);
         }
 
-        // RIGHT LABEL
         const rightLabel =
             document.createElement("div");
 
@@ -385,6 +509,38 @@ function buildFretboard() {
         row.appendChild(rightLabel);
 
         board.appendChild(row);
+    });
+}
+
+// =====================================
+// PIANO VISUALIZER
+// =====================================
+
+function updatePiano(notes) {
+
+    document.querySelectorAll(".dot").forEach(d => d.remove());
+
+    const uniqueNotes = [...new Set(notes)];
+
+    uniqueNotes.forEach(note => {
+
+        const key =
+            document.querySelector(`[data-note="${note}"]`);
+
+        if (!key) return;
+
+        const dot =
+            document.createElement("div");
+
+        dot.className = "dot";
+
+        if (key.classList.contains("blackKey")) {
+            dot.classList.add("blackDot");
+        } else {
+            dot.classList.add("whiteDot");
+        }
+
+        key.appendChild(dot);
     });
 }
 
@@ -431,6 +587,8 @@ function updateOutput() {
             tab,
             logicalTuning
         );
+
+    updatePiano(notes);
 
     if (notes.length < 3) {
 
